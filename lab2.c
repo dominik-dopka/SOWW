@@ -5,8 +5,6 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define PRECISION 0.000001
-#define RANGESIZE 1
 #define DATA 0
 #define RESULT 1
 #define FINISH 2
@@ -44,20 +42,15 @@ int main(int argc, char** argv)
 
 	if (myrank == 0)		//MASTER
 	{
-		//int table_size;
-		//printf("Type in desired table size: ");
-		//scanf("%d", )
-
 		int table[TABLE_SIZE];
 
 		for (int i = 0; i < TABLE_SIZE; i++)
 			table[i] = rand();
 
-		printf("Table size: %d \n \n Please type in desired package size: ", TABLE_SIZE);
 		scanf("%d", &package_size);
 
-
-		for (i = 1; i < proccount; i++) //powiadom o rozmiarze paczek
+		//send package size to slaves
+		for (i = 1; i < proccount; i++)
 			MPI_Send(&package_size, 1, MPI_INT, i, DATA, MPI_COMM_WORLD);
 
 		int* package = malloc(package_size * sizeof(int));
@@ -104,7 +97,8 @@ int main(int argc, char** argv)
 		// now display the result
 		gettimeofday(&end, 0);
 		long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-		printf("\nResult %d, Time: %ld ms", result, time);
+		//printf("\nResult %d, Time: %ld ms", result, time);
+		printf("\n Time: %ld ms", time);
 	}
 	else			//SLAVE
 	{
@@ -145,6 +139,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-
-
-
