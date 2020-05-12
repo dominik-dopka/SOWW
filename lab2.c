@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 		// first distribute some ranges to all slaves
 		for (i = 1; i < proccount; i++)
 		{
-			//send package size to slaves
+			//send package size to slaves for local array creation
 			MPI_Send(&package_size, 1, MPI_INT, i, DATA, MPI_COMM_WORLD);
 
 			for (int j = 0; j < package_size; j++)
