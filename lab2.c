@@ -42,16 +42,14 @@ int main(int argc, char** argv)
 
 	if (myrank == 0)		//MASTER
 	{
+		
+		long temp_package_size = strtol(argv[1], NULL, 10);
+		package_size = temp_package_size;			
+
 		int table[TABLE_SIZE];
 
 		for (int i = 0; i < TABLE_SIZE; i++)
 			table[i] = rand();
-
-		scanf("%d", &package_size);
-
-		//send package size to slaves
-		for (i = 1; i < proccount; i++)
-			MPI_Send(&package_size, 1, MPI_INT, i, DATA, MPI_COMM_WORLD);
 
 		int* package = malloc(package_size * sizeof(int));
 
@@ -60,6 +58,9 @@ int main(int argc, char** argv)
 		// first distribute some ranges to all slaves
 		for (i = 1; i < proccount; i++)
 		{
+			//send package size to slaves
+			MPI_Send(&package_size, 1, MPI_INT, i, DATA, MPI_COMM_WORLD);
+
 			for (int j = 0; j < package_size; j++)
 			{
 				package[j] = table[a + j];
