@@ -13,7 +13,7 @@
 
 #define TABLE_SIZE 100000
 
-main(int argc, char** argv)
+int main(int argc, char** argv)
 {
 	int myrank, proccount;
 	int a = 0, b = TABLE_SIZE;
@@ -50,7 +50,7 @@ main(int argc, char** argv)
 
 		int table[TABLE_SIZE];
 
-		for (int i = 0; i < size; i++)
+		for (int i = 0; i < TABLE_SIZE; i++)
 			table[i] = rand();
 
 		printf("Table size: %d \n \n Please type in desired package size: ", TABLE_SIZE);
@@ -104,7 +104,7 @@ main(int argc, char** argv)
 		// now display the result
 		gettimeofday(&end, 0);
 		long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-		printf("\nResult %d, Time: %ld ms, wynik to %d\n", result, time);
+		printf("\nResult %d, Time: %ld ms", result, time);
 	}
 	else			//SLAVE
 	{
