@@ -98,7 +98,7 @@ int main(int argc, char** argv)
 		gettimeofday(&end, 0);
 		long time = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
 		//printf("\nResult %d, Time: %ld ms", result, time);
-		printf("\n Time: %ld ms", time);
+		printf("\nTime: %ld ms \n\n", time);
 	}
 	else			//SLAVE
 	{
