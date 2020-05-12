@@ -13,15 +13,6 @@
 
 #define TABLE_SIZE 100000
 
-int * GenerateTable(int size)
-{
-	int table[size];
-	for (int i = 0; i < size; i++)
-		table[i] = rand();
-
-	return table;
-}
-
 main(int argc, char** argv)
 {
 	int myrank, proccount;
@@ -53,7 +44,14 @@ main(int argc, char** argv)
 
 	if (myrank == 0)		//MASTER
 	{
-		int table[TABLE_SIZE] = GenerateTable(TABLE_SIZE);
+		//int table_size;
+		//printf("Type in desired table size: ");
+		//scanf("%d", )
+
+		int table[TABLE_SIZE];
+
+		for (int i = 0; i < size; i++)
+			table[i] = rand();
 
 		printf("Table size: %d \n \n Please type in desired package size: ", TABLE_SIZE);
 		scanf("%d", &package_size);
@@ -121,8 +119,6 @@ main(int argc, char** argv)
 
 			if (status.MPI_TAG == DATA)
 			{
-				gettimeofday(&czas_start_ostatnia, 0);
-
 				MPI_Recv(package, package_size, MPI_INT, 0, DATA, MPI_COMM_WORLD, &status);
 				// compute my part
 
@@ -134,7 +130,7 @@ main(int argc, char** argv)
 					// additional computation to generate time
 					for (int j = 0; j < 10; j++)
 					{
-						sin (package[i]) * sin (package[i]) / package[i]
+						sin(package[i]) * sin(package[i]) / package[i];
 					}
 				}
 
