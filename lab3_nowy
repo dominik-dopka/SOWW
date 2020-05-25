@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <cstdlib>
 
 #define DATA 0
 #define RESULT 1
@@ -55,7 +56,7 @@ int main(int argc, char** argv)
 
 		srand(time(0));
 		for (int i = 0; i < TABLE_SIZE; i++)
-			table[i] = rand();
+			table[i] = abs(rand());
 
 		resulttemp = (int*)malloc((proccount - 1) * sizeof(int));
 
@@ -144,7 +145,7 @@ int main(int argc, char** argv)
 		// now send the FINISHING ranges to the slaves
 		// shut down the slaves
 		int* package = (int*)malloc(package_size * sizeof(int));
-		package[0] = 0;
+		package[0] = -1;
 
 		for (int i = 1; i < proccount; i++)
 		{
@@ -192,8 +193,9 @@ int main(int argc, char** argv)
 		//first receive the initial data
 		MPI_Recv(package, package_size, MPI_INT, 0, DATA, MPI_COMM_WORLD, &status);
 
-		while (package[0] != 0)//if there is some data to process
+		while (package[0] != -1)
 		{
+			//if there is some data to process
 			//before computing the next part start receiving a new data part
 			MPI_Irecv(next_package, package_size, MPI_INT, 0, DATA, MPI_COMM_WORLD, &(requests[0]));
 
@@ -219,8 +221,11 @@ int main(int argc, char** argv)
 			resulttemp[0] = resulttemp[1];
 
 			//and start sending the results back
-			MPI_Isend(&(resulttemp[0]), 1, MPI_INT, 0, RESULT, MPI_COMM_WORLD, &(requests[1]));
+			MPI_Isend(&(resulttemp[0]), 1, MPI_INT, 0, RESULT, 
+				MPI_COMM_WORLD, &(requests[1]));
 		}
+
+		// now finish sending the last results to the master
 		MPI_Wait(&(requests[1]), MPI_STATUS_IGNORE);
 	}
 
