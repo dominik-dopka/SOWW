@@ -14,18 +14,15 @@
 
 int main(int argc, char** argv)
 {
+	int myrank, proccount;
+	int a = 0, b = TABLE_SIZE;
+	int result = 0;
+	int* resulttemp;
+	int package_size;
+
 	MPI_Status status;
 	MPI_Request* requests;
 	int requestcompleted;
-
-	int myrank, proccount;
-	int a = 0, b = TABLE_SIZE;
-	int** paczki;
-	int* package; int* package2; int* temp_package;
-	int package_size;
-
-	int result = 0;
-	int* resulttemp;
 
 	//Initialize MPI
 	MPI_Init(&argc, &argv);
@@ -62,9 +59,9 @@ int main(int argc, char** argv)
 
 		resulttemp = (int*)malloc((proccount - 1) * sizeof(int));
 
-		paczki = (int**)malloc((proccount - 1) * sizeof(int*));
+		int** packages = (int**)malloc((proccount - 1) * sizeof(int*));
 		for (int i = 0; i < (proccount - 1); i++)
-			paczki[i] = (int*)malloc(package_size * sizeof(int));
+			packages[i] = (int*)malloc(package_size * sizeof(int));
 
 		for (int i = 1; i < proccount; i++) //powiadom o rozmiarze paczek
 			MPI_Send(&package_size, 1, MPI_INT, i, DATA, MPI_COMM_WORLD);
@@ -75,10 +72,10 @@ int main(int argc, char** argv)
 		for (int i = 1; i < proccount; i++)
 		{
 			for (int j = 0; j < package_size; j++)
-				paczki[i - 1][j] = table[a + j];
+				packages[i - 1][j] = table[a + j];
 			a += package_size;
 
-			MPI_Send(&(paczki[i - 1]), package_size, MPI_INT, i, DATA, MPI_COMM_WORLD);
+			MPI_Send(&(packages[i - 1]), package_size, MPI_INT, i, DATA, MPI_COMM_WORLD);
 		}
 
 		//the first proccount requests will be for receiving, the latter ones for sending
@@ -93,11 +90,11 @@ int main(int argc, char** argv)
 		for (int i = 1; i < proccount; i++)
 		{
 			for (int j = 0; j < package_size; j++)
-				paczki[i - 1][j] = table[a + j];
+				packages[i - 1][j] = table[a + j];
 			a += package_size;
 
 			//send it to process i
-			MPI_Isend(&(paczki[i - 1]), package_size, MPI_INT, i, DATA, MPI_COMM_WORLD, &(requests[proccount - 2 + i]));
+			MPI_Isend(&(packages[i - 1]), package_size, MPI_INT, i, DATA, MPI_COMM_WORLD, &(requests[proccount - 2 + i]));
 		}
 
 		while (a < b)
@@ -116,18 +113,26 @@ int main(int argc, char** argv)
 
 				//now send some new data portion to this process
 				for (int j = 0; j < package_size; j++)
-					paczki[requestcompleted][j] = table[a + j];
+				{
+					packages[requestcompleted][j] = table[a + j];
+				}				
 				a += package_size;
 
-				MPI_Isend(&(paczki[requestcompleted]), package_size, MPI_INT, requestcompleted + 1, DATA, MPI_COMM_WORLD, &(requests[proccount - 1 + requestcompleted]));
+				MPI_Isend(&(packages[requestcompleted]), package_size, MPI_INT, 
+					requestcompleted + 1, DATA, MPI_COMM_WORLD, 
+					&(requests[proccount - 1 + requestcompleted]));
 
-				MPI_Irecv(&(resulttemp[requestcompleted]), 1, MPI_INT, requestcompleted + 1, RESULT, MPI_COMM_WORLD, &(requests[requestcompleted]));
+				// now issue a corresponding recv
+				MPI_Irecv(&(resulttemp[requestcompleted]), 1, 
+					MPI_INT, requestcompleted + 1, RESULT, 
+					MPI_COMM_WORLD, 
+					&(requests[requestcompleted]));
 			}
 		}
 
-		//now send the finishing package to the slaves
-		//shut down the slaves
-		package = (int*)malloc(package_size * sizeof(int));
+		// now send the FINISHING ranges to the slaves
+		// shut down the slaves
+		int* package = (int*)malloc(package_size * sizeof(int));
 		package[0] = 0;
 
 		for (int i = 1; i < proccount; i++)
@@ -166,8 +171,8 @@ int main(int argc, char** argv)
 		//download info about package size
 		MPI_Recv(&package_size, 1, MPI_INT, 0, DATA, MPI_COMM_WORLD, &status);
 
-		package = (int*)malloc(package_size * sizeof(int));
-		package2 = (int*)malloc(package_size * sizeof(int));
+		int* package = (int*)malloc(package_size * sizeof(int));
+		int* next_package = (int*)malloc(package_size * sizeof(int));
 
 		resulttemp = (int*)malloc(2 * sizeof(int));
 
@@ -177,7 +182,7 @@ int main(int argc, char** argv)
 		while (package[0] != 0)//if there is some data to process
 		{
 			//before computing the next part start receiving a new data part
-			MPI_Irecv(package2, package_size, MPI_INT, 0, DATA, MPI_COMM_WORLD, &(requests[0]));
+			MPI_Irecv(next_package, package_size, MPI_INT, 0, DATA, MPI_COMM_WORLD, &(requests[0]));
 
 			//compute my part
 			resulttemp[1] = 0;
@@ -186,7 +191,7 @@ int main(int argc, char** argv)
 				resulttemp[1] += package[i];
 
 				// additional computation to generate time
-				for (int j = 0; j < 1000; j++)
+				for (int j = 0; j < 10; j++)
 				{
 					sin(package[i])* sin(package[i]) / package[i];
 				}
@@ -196,9 +201,7 @@ int main(int argc, char** argv)
 			//and finish sending the previous results back to master
 			MPI_Waitall(2, requests, MPI_STATUSES_IGNORE);
 
-			temp_package = package;
-			package = package2;
-			package2 = temp_package;
+			package = next_package;
 
 			resulttemp[0] = resulttemp[1];
 
