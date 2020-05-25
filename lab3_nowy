@@ -60,19 +60,24 @@ int main(int argc, char** argv)
 		resulttemp = (int*)malloc((proccount - 1) * sizeof(int));
 
 		int** packages = (int**)malloc((proccount - 1) * sizeof(int*));
+
 		for (int i = 0; i < (proccount - 1); i++)
+		{
 			packages[i] = (int*)malloc(package_size * sizeof(int));
-
-		for (int i = 1; i < proccount; i++) //powiadom o rozmiarze paczek
-			MPI_Send(&package_size, 1, MPI_INT, i, DATA, MPI_COMM_WORLD);
-
+		}
+			
 		gettimeofday(&start, 0);
 
 		//first distribute some ranges to all slaves
 		for (int i = 1; i < proccount; i++)
 		{
+			//send package size to slaves for local array creation
+			MPI_Send(&package_size, 1, MPI_INT, i, DATA, MPI_COMM_WORLD);
+
 			for (int j = 0; j < package_size; j++)
+			{
 				packages[i - 1][j] = table[a + j];
+			}
 			a += package_size;
 
 			MPI_Send(&(packages[i - 1]), package_size, MPI_INT, i, DATA, MPI_COMM_WORLD);
@@ -80,27 +85,32 @@ int main(int argc, char** argv)
 
 		//the first proccount requests will be for receiving, the latter ones for sending
 		for (int i = 0; i < 2 * (proccount - 1); i++)
-			requests[i] = MPI_REQUEST_NULL;
+			requests[i] = MPI_REQUEST_NULL; // none active at this point
 
 		//start receiving results from the slaves
 		for (int i = 1; i < proccount; i++)
-			MPI_Irecv(&(resulttemp[i - 1]), 1, MPI_INT, i, RESULT, MPI_COMM_WORLD, &(requests[i - 1]));
+			MPI_Irecv(&(resulttemp[i - 1]), 1, MPI_INT, i, RESULT, 
+				MPI_COMM_WORLD, &(requests[i - 1]));
 
 		//start sending new data parts to the slaves
 		for (int i = 1; i < proccount; i++)
 		{
 			for (int j = 0; j < package_size; j++)
+			{
 				packages[i - 1][j] = table[a + j];
+			}
 			a += package_size;
 
 			//send it to process i
-			MPI_Isend(&(packages[i - 1]), package_size, MPI_INT, i, DATA, MPI_COMM_WORLD, &(requests[proccount - 2 + i]));
+			MPI_Isend(&(packages[i - 1]), package_size, MPI_INT, i, DATA, 
+				MPI_COMM_WORLD, &(requests[proccount - 2 + i]));
 		}
 
 		while (a < b)
 		{
 			//wait for completion of any of the requests
-			MPI_Waitany(2 * proccount - 2, requests, &requestcompleted, MPI_STATUS_IGNORE);
+			MPI_Waitany(2 * proccount - 2, requests, &requestcompleted, 
+				MPI_STATUS_IGNORE);
 
 			//if it is a result then send new data to process
 			//and add the result
@@ -109,7 +119,8 @@ int main(int argc, char** argv)
 				result += resulttemp[requestcompleted];
 
 				//first check if the send has terminated
-				MPI_Wait(&(requests[proccount - 1 + requestcompleted]), MPI_STATUS_IGNORE);
+				MPI_Wait(&(requests[proccount - 1 + requestcompleted]), 
+					MPI_STATUS_IGNORE);
 
 				//now send some new data portion to this process
 				for (int j = 0; j < package_size; j++)
@@ -137,7 +148,8 @@ int main(int argc, char** argv)
 
 		for (int i = 1; i < proccount; i++)
 		{
-			MPI_Isend(package, package_size, MPI_INT, i, DATA, MPI_COMM_WORLD, &(requests[2 * proccount - 3 + i]));
+			MPI_Isend(package, package_size, MPI_INT, i, DATA, MPI_COMM_WORLD, 
+				&(requests[2 * proccount - 3 + i]));
 		}
 
 		//now receive results from the processes - that is finalize the pending requests
@@ -152,7 +164,8 @@ int main(int argc, char** argv)
 		//now receive results for the initial sends
 		for (int i = 0; i < (proccount - 1); i++)
 		{
-			MPI_Recv(&(resulttemp[i]), 1, MPI_INT, i + 1, RESULT, MPI_COMM_WORLD, &status);
+			MPI_Recv(&(resulttemp[i]), 1, MPI_INT, i + 1, RESULT, 
+				MPI_COMM_WORLD, &status);
 			result += resulttemp[i];
 		}
 
