@@ -191,7 +191,6 @@ int main(int argc, char** argv)
 					sin(package[i])* sin(package[i]) / package[i];
 				}
 			}
-		}
 
 			//now finish receiving the new part
 			//and finish sending the previous results back to master
