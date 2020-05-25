@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
-#include <cstdlib>
 
 #define DATA 0
 #define RESULT 1
