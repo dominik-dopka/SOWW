@@ -20,10 +20,6 @@ int main(int argc, char** argv)
 	int package_size;
 	MPI_Status status;
 
-	struct timeval start, end;
-
-	srand(time(0));
-
 	// Initialize MPI
 	MPI_Init(&argc, &argv);
 
@@ -44,12 +40,15 @@ int main(int argc, char** argv)
 	{
 		
 		long temp_package_size = strtol(argv[1], NULL, 10);
-		package_size = temp_package_size;			
+		package_size = temp_package_size;
 
 		int table[TABLE_SIZE];
 
+		struct timeval start, end;
+		
+		srand(time(0));
 		for (int i = 0; i < TABLE_SIZE; i++)
-			table[i] = rand();
+			table[i] = abs(rand());
 
 		int* package = malloc(package_size * sizeof(int));
 
@@ -103,7 +102,7 @@ int main(int argc, char** argv)
 	}
 	else			//SLAVE
 	{
-		//pobranie info o rozmiarze paczek
+		//download info about package size
 		MPI_Recv(&package_size, 1, MPI_INT, 0, DATA, MPI_COMM_WORLD, &status);
 		int* package = malloc(package_size * sizeof(int));
 
@@ -123,11 +122,10 @@ int main(int argc, char** argv)
 					resulttemp += package[i];
 
 					// additional computation to generate time
-					for (int j = 0; j < 10; j++)
+					for (int j = 0; j < 100; j++)
 					{
-						sin(package[i]) * sin(package[i]) / package[i];
+						sin(package[i])* sin(package[i]) / package[i];					}
 					}
-				}
 
 				// send the result back
 				MPI_Send(&resulttemp, 1, MPI_INT, 0, RESULT, MPI_COMM_WORLD);
