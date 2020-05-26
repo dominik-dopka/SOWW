@@ -188,8 +188,6 @@ int main(int argc, char** argv)
 		int* package = (int*)malloc(package_size * sizeof(int));
 		int* next_package = (int*)malloc(package_size * sizeof(int));
 
-		resulttemp = (int*)malloc(2 * sizeof(int));
-
 		//first receive the initial data
 		MPI_Recv(package, package_size, MPI_INT, 0, DATA, MPI_COMM_WORLD, &status);
 
@@ -201,10 +199,10 @@ int main(int argc, char** argv)
 			MPI_Irecv(next_package, package_size, MPI_INT, 0, DATA, MPI_COMM_WORLD, &(requests[0]));
 
 			//compute my part
-			resulttemp[1] = 0;
+			int slave_resulttemp = 0;
 			for (int i = 0; i < package_size; i++)
 			{
-				resulttemp[1] += package[i];
+				slave_resulttemp += package[i];
 
 				// additional computation to generate time
 				for (int j = 0; j < 10; j++)
@@ -219,10 +217,8 @@ int main(int argc, char** argv)
 
 			package = next_package;
 
-			resulttemp[0] = resulttemp[1];
-
 			//and start sending the results back
-			MPI_Isend(&(resulttemp[0]), 1, MPI_INT, 0, RESULT, 
+			MPI_Isend(&slave_resulttemp, 1, MPI_INT, 0, RESULT,
 				MPI_COMM_WORLD, &(requests[1]));
 		}
 
